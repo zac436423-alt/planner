@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <title>Budget Planner Online Free - Simple & Secure Expense Tracker</title>
+    <meta name="description" content="A 100% free budget planner online. Securely track expenses, visualize spending with charts, and export data to CSV. No login required, your data stays private.">
+    <meta name="keywords" content="budget planner online free, expense tracker, personal finance tool, free savings tracker, monthly budget">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="BudgetPlus">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2489/2489756.png">
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --brand-light: #f4f7fe;
+            --brand-main: #4361ee; /* Modern Blue for Budgeting */
+            --brand-dark: #3f37c9;
+            --accent-green: #2ecc71;
+            --text-dark: #2b2d42;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; padding-bottom: 100px; color: var(--text-dark);
+            background-color: var(--brand-light);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M0 40 L40 0 L40 40 Z' fill='%234361ee' fill-opacity='0.03'/%3E%3C/svg%3E");
+            background-attachment: fixed;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--brand-main), var(--brand-dark));
+            padding: 20px; text-align: center; font-size: 22px;
+            font-weight: 800; color: white; letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+            position: sticky; top: 0; z-index: 100;
+        }
+
+        .stats-card {
+            margin: 15px; padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px); border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            display: flex; justify-content: space-around;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+        }
+        .stats-item { text-align: center; }
+        .stats-label { font-size: 12px; color: #718096; display: block; margin-bottom: 5px; text-transform: uppercase; font-weight: 600; }
+        .stats-value { font-size: 22px; font-weight: 800; }
+
+        .tab-bar { display: flex; gap: 10px; padding: 0 15px; margin-bottom: 15px; }
+        .tab-btn {
+            flex: 1; padding: 12px; border-radius: 12px; border: none;
+            background: white; color: var(--brand-main); font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; transition: 0.3s;
+        }
+        .tab-btn.active { background: var(--brand-main); color: #fff; }
+
+        .record-list {
+            background: white; margin: 0 15px; border-radius: 20px; overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        }
+        .record-item {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 15px 20px; border-bottom: 1px solid #f1f1f1;
+        }
+        .note-text { font-size: 13px; color: #718096; margin-top: 4px; border-left: 3px solid var(--brand-main); padding-left: 8px; }
+
+        .add-btn {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: 70px; height: 70px;
+            background: linear-gradient(135deg, var(--brand-main), var(--brand-dark));
+            border-radius: 50%; font-size: 36px; color: white;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 10px 25px rgba(67, 97, 238, 0.4);
+            border: 4px solid white; z-index: 1000; cursor: pointer;
+        }
+
+        .modal {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; border-radius: 25px 25px 0 0;
+            padding: 20px; transform: translateY(100%);
+            transition: 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); z-index: 2000;
+            max-height: 85vh; display: flex; flex-direction: column;
+        }
+        .modal.show { transform: translateY(0); }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 1500; backdrop-filter: blur(4px); }
+        .overlay.show { display: block; }
+
+        .cat-scroll-area { flex: 1; overflow-y: auto; margin: 15px 0; padding-right: 5px; }
+        .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .cat-item { text-align: center; font-size: 11px; color: #4a5568; cursor: pointer; }
+        .cat-icon-bg { width: 50px; height: 50px; background: #edf2f7; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px; font-size: 24px; transition: 0.2s; }
+        .cat-item.active .cat-icon-bg { background: var(--brand-main); color: white; transform: scale(1.1); }
+
+        .input-group { background: #f8fafc; padding: 18px; border-radius: 18px; margin-bottom: 15px; }
+        .money-input { border-bottom: 2px solid var(--brand-main); display: flex; align-items: center; padding-bottom: 8px; margin-bottom: 15px; }
+        .money-input input { border: none; outline: none; width: 100%; text-align: right; font-size: 32px; font-weight: bold; background: transparent; color: var(--text-dark); }
+        .note-input { width: 100%; border: none; outline: none; background: transparent; font-size: 15px; color: #4a5568; }
+
+        .save-btn { width: 100%; padding: 18px; background: var(--brand-main); border: none; border-radius: 18px; font-size: 18px; font-weight: 800; color: white; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div class="header">💎 BudgetPlus Online</div>
+
+    <div class="stats-card">
+        <div class="stats-item">
+            <span class="stats-label">Expenses</span>
+            <span class="stats-value" style="color: #e53e3e;">${{ totalExp.toFixed(2) }}</span>
+        </div>
+        <div class="stats-item" style="border-left: 1px solid #edf2f7; padding-left: 20px;">
+            <span class="stats-label">Income</span>
+            <span class="stats-value" style="color: var(--accent-green);">${{ totalInc.toFixed(2) }}</span>
+        </div>
+    </div>
+
+    <div class="tab-bar">
+        <button class="tab-btn" :class="{active: view === 'list'}" @click="view = 'list'">📜 History</button>
+        <button class="tab-btn" :class="{active: view === 'chart'}" @click="view = 'chart'">📊 Insights</button>
+        <button class="tab-btn" @click="exportCSV">📤 Export CSV</button>
+    </div>
+
+    <div v-if="view === 'list'" class="record-list">
+        <div v-if="records.length === 0" style="padding: 60px 20px; text-align: center; color: #a0aec0;">
+            <p>Your vault is empty.</p>
+            <p style="font-size: 13px;">Start tracking to see your financial health!</p>
+        </div>
+        <div v-for="(item, i) in records" :key="i" class="record-item">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <span style="font-size: 26px;">{{ item.catIcon }}</span>
+                <div>
+                    <div style="font-weight: 700; font-size: 15px;">{{ item.category }}</div>
+                    <div v-if="item.note" class="note-text">{{ item.note }}</div>
+                    <div style="font-size: 11px; color: #cbd5e0; margin-top: 4px;">{{ formatDate(item.date) }}</div>
+                </div>
+            </div>
+            <div :style="{color: item.type === 'income' ? '#2ecc71' : '#2d3748', fontWeight: '800', fontSize: '18px'}">
+                {{ item.type === 'income' ? '+' : '-' }}${{ item.amount.toFixed(2) }}
+            </div>
+        </div>
+    </div>
+
+    <div v-if="view === 'chart'" style="padding: 15px;">
+        <div style="background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <h3 style="margin-top:0; font-size:16px; text-align:center;">Expense Breakdown</h3>
+            <canvas id="pieChart"></canvas>
+            <div v-if="records.filter(r=>r.type==='expense').length === 0" style="text-align:center; color:#a0aec0; margin-top:20px;">
+                No expense data to visualize yet.
+            </div>
+        </div>
+    </div>
+
+    <div class="add-btn" @click="showModal = true">＋</div>
+
+    <div :class="['overlay', showModal ? 'show' : '']" @click="showModal = false"></div>
+    <div :class="['modal', showModal ? 'show' : '']">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <span style="font-weight: 800; font-size: 18px;">New Transaction</span>
+            <span @click="showModal = false" style="color: #a0aec0; font-size: 14px; cursor: pointer;">Cancel</span>
+        </div>
+
+        <div style="display: flex; background: #f1f5f9; border-radius: 12px; padding: 5px; margin-bottom: 15px;">
+            <div @click="newRecord.type = 'expense'" :style="newRecord.type === 'expense' ? 'background:white; flex:1; text-align:center; padding:10px; border-radius:10px; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.1);' : 'flex:1; text-align:center; padding:10px; color:#64748b; cursor:pointer;'">Expense</div>
+            <div @click="newRecord.type = 'income'" :style="newRecord.type === 'income' ? 'background:var(--accent-green); color:white; flex:1; text-align:center; padding:10px; border-radius:10px; font-weight:bold;' : 'flex:1; text-align:center; padding:10px; color:#64748b; cursor:pointer;'">Income</div>
+        </div>
+
+        <div class="cat-scroll-area">
+            <div class="cat-grid">
+                <div v-for="c in categories[newRecord.type]" :key="c.name" 
+                     class="cat-item" :class="{active: newRecord.category === c.name}"
+                     @click="newRecord.category = c.name; newRecord.catIcon = c.icon">
+                    <div class="cat-icon-bg">{{ c.icon }}</div>
+                    {{ c.name }}
+                </div>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <div class="money-input">
+                <span style="font-size: 20px; color: #94a3b8; margin-right: 8px;">$</span>
+                <input type="number" v-model.number="newRecord.amount" placeholder="0.00" inputmode="decimal">
+            </div>
+            <input type="text" v-model="newRecord.note" placeholder="What was this for? (Optional)" class="note-input">
+        </div>
+
+        <button class="save-btn" @click="save">Confirm Transaction</button>
+    </div>
+</div>
+
+<script>
+const DB_KEY = 'budget_planner_pro_v1';
+
+new Vue({
+    el: '#app',
+    data: {
+        view: 'list',
+        showModal: false,
+        records: JSON.parse(localStorage.getItem(DB_KEY) || '[]'),
+        categories: {
+            expense: [
+                {name:'Breakfast',icon:'🥣'},{name:'Lunch',icon:'🍱'},{name:'Dinner',icon:'🍜'},{name:'Groceries',icon:'🛒'},
+                {name:'Coffee',icon:'☕'},{name:'Drinks',icon:'🥤'},{name:'Snacks',icon:'🍪'},{name:'Dining Out',icon:'🍴'},
+                {name:'Transport',icon:'🚌'},{name:'Shopping',icon:'🛍️'},{name:'Household',icon:'🧻'},{name:'Clothes',icon:'👕'},
+                {name:'Rent',icon:'🔑'},{name:'Housing',icon:'🏠'},{name:'Bills',icon:'📞'},{name:'Hotel',icon:'🏨'},
+                {name:'Beauty',icon:'💄'},{name:'Health',icon:'🏥'},{name:'Fitness',icon:'🏃'},{name:'Pets',icon:'🐶'},
+                {name:'Social',icon:'💬'},{name:'Travel',icon:'✈️'},{name:'Books',icon:'📚'},{name:'Cinema',icon:'🎬'},
+                {name:'Tech',icon:'💻'},{name:'Education',icon:'🎓'},{name:'Gifts',icon:'🎁'},{name:'Donation',icon:'❤️'},
+                {name:'Repair',icon:'🔧'},{name:'Auto',icon:'🚗'},{name:'Others',icon:'➕'}
+            ],
+            income: [
+                {name:'Salary',icon:'💰'},{name:'Freelance',icon:'🕒'},{name:'Investment',icon:'📈'},{name:'Bonus',icon:'🧧'},{name:'Gift',icon:'🎁'},{name:'Others',icon:'🪙'}
+            ]
+        },
+        newRecord: { type:'expense', category:'Lunch', catIcon:'🍱', amount: '', note: '' }
+    },
+    computed: {
+        totalExp() { return this.records.filter(r=>r.type==='expense').reduce((s,r)=>s+Number(r.amount),0) },
+        totalInc() { return this.records.filter(r=>r.type==='income').reduce((s,r)=>s+Number(r.amount),0) }
+    },
+    watch: {
+        view(val) { if(val === 'chart') this.$nextTick(() => this.renderCharts()); },
+        'newRecord.type'(val) {
+            const first = this.categories[val][0];
+            this.newRecord.category = first.name;
+            this.newRecord.catIcon = first.icon;
+        }
+    },
+    methods: {
+        save() {
+            if(!this.newRecord.amount || this.newRecord.amount <= 0) return;
+            this.records.unshift({...this.newRecord, date: new Date().getTime()});
+            localStorage.setItem(DB_KEY, JSON.stringify(this.records));
+            this.showModal = false;
+            this.newRecord.amount = '';
+            this.newRecord.note = '';
+        },
+        formatDate(ts) { 
+            return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); 
+        },
+        exportCSV() {
+            if (this.records.length === 0) return alert('No data to export.');
+            let csv = "Date,Type,Category,Amount,Note\n";
+            this.records.forEach(r => {
+                csv += `${this.formatDate(r.date)},${r.type},${r.category},${r.amount},"${r.note || ''}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `Budget_Export_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+        },
+        renderCharts() {
+            const expData = this.records.filter(r => r.type === 'expense');
+            if(expData.length === 0) return;
+            const catMap = {};
+            expData.forEach(r => catMap[r.category] = (catMap[r.category] || 0) + r.amount);
+            
+            const ctx = document.getElementById('pieChart');
+            if(!ctx) return;
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(catMap),
+                    datasets: [{ 
+                        data: Object.values(catMap), 
+                        backgroundColor: ['#4361ee','#4cc9f0','#f72585','#7209b7','#3a0ca3','#4895ef','#560bad','#b5179e','#f15bb5','#00f5d4'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }
+                }
+            });
+        }
+    }
+});
+</script>
+</body>
+</html>
