@@ -4,158 +4,164 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>Budget Planner Online Free - Smart US Expense Tracker</title>
-    <meta name="description" content="Free, secure online budget planner for US residents. Track rent, student loans, groceries, and subscriptions. No signup required.">
+    <title>Smart Budget & Tax Planner - Free Online Tool</title>
+    <meta name="description" content="Free US Budget Planner with built-in Tax Estimator. Track W-2 paychecks, 1099 gig income, and daily expenses safely.">
     
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         :root {
-            --us-blue: #0A2540;
-            --us-accent: #635BFF;
+            --us-navy: #0A2540;
+            --us-blue: #635BFF;
             --us-green: #22C55E;
-            --us-bg: #F6F9FC;
+            --us-bg: #F8FAFC;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0; padding-bottom: 100px; color: var(--us-blue);
-            background-color: var(--us-bg);
+            margin: 0; padding-bottom: 100px; color: var(--us-navy); background-color: var(--us-bg);
         }
 
-        .header {
-            background: var(--us-blue);
-            padding: 22px; text-align: center; font-size: 20px;
-            font-weight: 700; color: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: sticky; top: 0; z-index: 100;
-        }
+        .header { background: var(--us-navy); padding: 20px; text-align: center; color: white; font-weight: 700; position: sticky; top: 0; z-index: 100; }
 
+        /* Summary Card */
         .stats-card {
-            margin: 15px; padding: 24px;
-            background: white; border-radius: 16px;
-            display: flex; justify-content: space-around;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02), 0 1px 3px rgba(0,0,0,0.08);
+            margin: 15px; padding: 20px; background: white; border-radius: 16px;
+            display: flex; justify-content: space-around; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
-        .stats-label { font-size: 11px; color: #697386; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .stats-value { font-size: 24px; font-weight: 700; }
+        .stats-label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 600; }
+        .stats-value { font-size: 20px; font-weight: 700; display: block; }
 
-        .tab-bar { display: flex; gap: 8px; padding: 0 15px; margin-bottom: 15px; }
+        /* Tabs */
+        .tab-bar { display: flex; gap: 5px; padding: 0 15px; margin-bottom: 15px; overflow-x: auto; }
         .tab-btn {
-            flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #E3E8EE;
-            background: white; color: #4F5B76; font-weight: 600; cursor: pointer;
+            flex: 1; padding: 10px 5px; border-radius: 8px; border: none;
+            background: #E2E8F0; color: #475569; font-weight: 600; cursor: pointer; white-space: nowrap; font-size: 13px;
         }
-        .tab-btn.active { background: var(--us-accent); color: white; border-color: var(--us-accent); }
+        .tab-btn.active { background: var(--us-blue); color: white; }
 
-        .record-list { background: white; margin: 0 15px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .record-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 16px; border-bottom: 1px solid #F6F9FC;
-        }
-        .cat-icon { font-size: 24px; width: 44px; height: 44px; background: #F6F9FC; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        /* List Items */
+        .record-list { background: white; margin: 0 15px; border-radius: 12px; }
+        .record-item { display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid #F1F5F9; }
 
+        /* Calculator Styles */
+        .tax-card { background: white; margin: 15px; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .input-box { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #E2E8F0; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .result-line { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #E2E8F0; }
+
+        /* Modal & FAB */
         .add-btn {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            width: 64px; height: 64px; background: var(--us-accent);
-            border-radius: 50%; font-size: 32px; color: white;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 12px rgba(99, 91, 255, 0.3); z-index: 1000; cursor: pointer;
+            width: 60px; height: 60px; background: var(--us-blue);
+            border-radius: 50%; font-size: 30px; color: white;
+            display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(99,91,255,0.4); z-index: 1000;
         }
 
         .modal {
             position: fixed; bottom: 0; left: 0; right: 0; background: white;
-            border-radius: 20px 20px 0 0; padding: 24px; transform: translateY(100%);
-            transition: 0.3s ease-out; z-index: 2000;
+            border-radius: 20px 20px 0 0; padding: 20px; transform: translateY(100%);
+            transition: 0.3s ease-out; z-index: 2000; max-height: 90vh; overflow-y: auto;
         }
         .modal.show { transform: translateY(0); }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 1500; }
         .overlay.show { display: block; }
-
-        .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-height: 250px; overflow-y: auto; padding: 10px 0; }
-        .cat-item { text-align: center; font-size: 10px; cursor: pointer; opacity: 0.6; }
-        .cat-item.active { opacity: 1; transform: scale(1.05); }
-        .cat-item.active .cat-icon { background: #E3E8EE; border: 2px solid var(--us-accent); }
-
-        .input-group { background: #F6F9FC; padding: 20px; border-radius: 12px; margin: 15px 0; }
-        .money-input input { border: none; outline: none; width: 100%; text-align: right; font-size: 36px; font-weight: 700; background: transparent; color: var(--us-blue); }
-        .save-btn { width: 100%; padding: 16px; background: var(--us-accent); border: none; border-radius: 8px; color: white; font-size: 16px; font-weight: 600; cursor: pointer; }
+        
+        .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
+        .cat-item { text-align: center; font-size: 10px; opacity: 0.5; cursor: pointer; }
+        .cat-item.active { opacity: 1; font-weight: 700; }
+        .cat-icon { font-size: 24px; background: #F1F5F9; padding: 10px; border-radius: 12px; display: block; margin-bottom: 5px; }
+        .cat-item.active .cat-icon { background: #EEF2FF; border: 2px solid var(--us-blue); }
     </style>
 </head>
 <body>
 
 <div id="app">
-    <div class="header">🗽 My Budget Dashboard</div>
+    <div class="header">🏦 Budget & Tax Pro</div>
 
     <div class="stats-card">
-        <div class="stats-item">
-            <span class="stats-label">Total Spent</span>
-            <span class="stats-value" style="color: #EF4444;">${{ totalExp.toLocaleString() }}</span>
+        <div style="text-align:center">
+            <span class="stats-label">Net Income</span>
+            <span class="stats-value" style="color:var(--us-green)">+${{ totalInc.toLocaleString() }}</span>
         </div>
-        <div class="stats-item" style="border-left: 1px solid #E3E8EE; padding-left: 20px;">
-            <span class="stats-label">Income</span>
-            <span class="stats-value" style="color: var(--us-green);">${{ totalInc.toLocaleString() }}</span>
+        <div style="text-align:center">
+            <span class="stats-label">Expenses</span>
+            <span class="stats-value" style="color:#EF4444">-${{ totalExp.toLocaleString() }}</span>
         </div>
     </div>
 
     <div class="tab-bar">
         <button class="tab-btn" :class="{active: view === 'list'}" @click="view = 'list'">Transactions</button>
-        <button class="tab-btn" :class="{active: view === 'chart'}" @click="view = 'chart'">Spending Analytics</button>
-        <button class="tab-btn" @click="exportCSV">Export</button>
+        <button class="tab-btn" :class="{active: view === 'tax'}" @click="view = 'tax'">📊 Tax Estimator</button>
+        <button class="tab-btn" @click="exportCSV">📤 Export</button>
     </div>
 
     <div v-if="view === 'list'" class="record-list">
-        <div v-if="records.length === 0" style="padding: 50px; text-align: center; color: #8898AA;">No records yet.</div>
+        <div v-if="records.length === 0" style="padding:40px; text-align:center; color:#94A3B8;">Start by adding your first paycheck or expense!</div>
         <div v-for="(item, i) in records" :key="i" class="record-item">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <div class="cat-icon">{{ item.catIcon }}</div>
+            <div style="display:flex; align-items:center; gap:12px">
+                <span style="font-size:20px">{{ item.catIcon }}</span>
                 <div>
-                    <div style="font-weight: 600;">{{ item.category }}</div>
-                    <div style="font-size: 11px; color: #8898AA;">{{ formatDate(item.date) }} <span v-if="item.note">• {{ item.note }}</span></div>
+                    <div style="font-weight:600; font-size:14px">{{ item.category }}</div>
+                    <div style="font-size:11px; color:#94A3B8">{{ formatDate(item.date) }} <span v-if="item.note">| {{ item.note }}</span></div>
                 </div>
             </div>
-            <div :style="{color: item.type === 'income' ? '#10B981' : '#1A1F36', fontWeight: '700', fontSize: '16px'}">
+            <div :style="{color: item.type === 'income' ? var(--us-green) : '#1E293B', fontWeight:'700'}">
                 {{ item.type === 'income' ? '+' : '-' }}${{ item.amount.toFixed(2) }}
             </div>
         </div>
     </div>
 
-    <div v-if="view === 'chart'" style="padding: 15px;">
-        <canvas id="pieChart" style="background: white; padding: 20px; border-radius: 12px;"></canvas>
+    <div v-if="view === 'tax'" class="tax-card">
+        <h3 style="margin-top:0">Federal Tax Estimator</h3>
+        <p style="font-size:12px; color:#64748B">Estimate your annual tax liability based on 2025/26 tax brackets.</p>
+        
+        <label class="stats-label">Annual Gross Income ($)</label>
+        <input type="number" class="input-box" v-model.number="taxCalc.income" placeholder="e.g. 65000">
+        
+        <label class="stats-label">Filing Status</label>
+        <select class="input-box" v-model="taxCalc.status">
+            <option value="single">Single</option>
+            <option value="married">Married (Jointly)</option>
+        </select>
+
+        <div style="margin-top:20px; background:#F8FAFC; padding:15px; border-radius:10px;">
+            <div class="result-line"><span>Estimated Tax:</span> <span style="font-weight:700">${{ calculateTax().tax.toLocaleString() }}</span></div>
+            <div class="result-line"><span>Effective Rate:</span> <span>{{ calculateTax().rate }}%</span></div>
+            <div class="result-line"><span>After-tax Income:</span> <span>${{ (taxCalc.income - calculateTax().tax).toLocaleString() }}</span></div>
+        </div>
+        <p style="font-size:10px; color:#94A3B8; margin-top:10px;">* This is a rough estimate for educational purposes only. Consult a tax professional (CPA) for actual filings.</p>
     </div>
 
     <div class="add-btn" @click="showModal = true">+</div>
 
     <div :class="['overlay', showModal ? 'show' : '']" @click="showModal = false"></div>
     <div :class="['modal', showModal ? 'show' : '']">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <span style="font-weight: 700; font-size: 18px;">Log Transaction</span>
-            <span @click="showModal = false" style="color: var(--us-accent); font-weight: 600; cursor: pointer;">Done</span>
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px">
+            <b style="font-size:18px">Log Entry</b>
+            <span @click="showModal = false" style="color:var(--us-blue); cursor:pointer">Cancel</span>
         </div>
 
-        <div style="display: flex; background: #F6F9FC; border-radius: 8px; padding: 4px;">
-            <div @click="newRecord.type = 'expense'" :style="newRecord.type === 'expense' ? 'background:white; flex:1; text-align:center; padding:8px; border-radius:6px; font-weight:700; box-shadow:0 1px 3px rgba(0,0,0,0.1);' : 'flex:1; text-align:center; padding:8px; color:#697386; cursor:pointer;'">Expense</div>
-            <div @click="newRecord.type = 'income'" :style="newRecord.type === 'income' ? 'background:var(--us-green); color:white; flex:1; text-align:center; padding:8px; border-radius:6px; font-weight:700;' : 'flex:1; text-align:center; padding:8px; color:#697386; cursor:pointer;'">Income</div>
+        <div style="display:flex; background:#F1F5F9; border-radius:10px; padding:4px; margin-bottom:15px">
+            <div @click="newRecord.type = 'expense'" :style="newRecord.type === 'expense' ? 'background:white; flex:1; text-align:center; padding:10px; border-radius:8px; font-weight:700;' : 'flex:1; text-align:center; padding:10px; color:#64748B'">Expense</div>
+            <div @click="newRecord.type = 'income'" :style="newRecord.type === 'income' ? 'background:var(--us-green); color:white; flex:1; text-align:center; padding:10px; border-radius:8px; font-weight:700;' : 'flex:1; text-align:center; padding:10px; color:#64748B'">Income</div>
         </div>
 
         <div class="cat-grid">
-            <div v-for="c in categories[newRecord.type]" :key="c.name" 
-                 class="cat-item" :class="{active: newRecord.category === c.name}"
-                 @click="newRecord.category = c.name; newRecord.catIcon = c.icon">
-                <div class="cat-icon">{{ c.icon }}</div>
-                <div style="margin-top:4px">{{ c.name }}</div>
+            <div v-for="c in categories[newRecord.type]" :key="c.name" class="cat-item" :class="{active: newRecord.category === c.name}" @click="newRecord.category = c.name; newRecord.catIcon = c.icon">
+                <span class="cat-icon">{{ c.icon }}</span> {{ c.name }}
             </div>
         </div>
 
-        <div class="input-group">
-            <div class="money-input" style="display: flex; align-items: center;">
-                <span style="font-size: 24px; font-weight: 700; color: #A3ACB9;">$</span>
-                <input type="number" v-model.number="newRecord.amount" placeholder="0.00" inputmode="decimal">
+        <div style="background:#F1F5F9; padding:15px; border-radius:12px">
+            <div style="display:flex; align-items:center; border-bottom:1px solid #CBD5E1; padding-bottom:5px">
+                <span style="font-size:24px; color:#64748B; margin-right:5px">$</span>
+                <input type="number" v-model.number="newRecord.amount" placeholder="0.00" style="border:none; background:transparent; font-size:30px; font-weight:700; width:100%; outline:none">
             </div>
-            <input type="text" v-model="newRecord.note" placeholder="Add a memo..." style="width:100%; border:none; background:transparent; margin-top:10px; font-size:14px; outline:none;">
+            <input type="text" v-model="newRecord.note" placeholder="Memo (e.g. Safeway, Uber, Tips)" style="width:100%; border:none; background:transparent; margin-top:10px; outline:none">
         </div>
 
-        <button class="save-btn" @click="save">Save Transaction</button>
+        <button @click="save" style="width:100%; background:var(--us-blue); color:white; border:none; padding:18px; border-radius:12px; margin-top:15px; font-size:16px; font-weight:700">Add to Ledger</button>
     </div>
 </div>
 
@@ -165,20 +171,19 @@ new Vue({
     data: {
         view: 'list',
         showModal: false,
-        records: JSON.parse(localStorage.getItem('us_budget_v1') || '[]'),
+        taxCalc: { income: '', status: 'single' },
+        records: JSON.parse(localStorage.getItem('us_pro_budget') || '[]'),
         categories: {
             expense: [
-                {name:'Rent/Mortgage',icon:'🏠'},{name:'Groceries',icon:'🛒'},{name:'Dining Out',icon:'🍔'},{name:'Gas/Fuel',icon:'⛽'},
-                {name:'Car Payment',icon:'🚗'},{name:'Insurance',icon:'🛡️'},{name:'Utilities',icon:'⚡'},{name:'Streaming/Apps',icon:'📱'},
-                {name:'Shopping',icon:'🛍️'},{name:'Student Loan',icon:'🎓'},{name:'Credit Card',icon:'💳'},{name:'Health',icon:'🏥'},
-                {name:'Coffee',icon:'☕'},{name:'Gym',icon:'🏋️'},{name:'Travel',icon:'✈️'},{name:'Gifts/Tips',icon:'🧧'},
-                {name:'Phone/Net',icon:'📶'},{name:'Home Repair',icon:'🛠️'},{name:'Others',icon:'➕'}
+                {name:'Rent/Mortgage',icon:'🏠'},{name:'Groceries',icon:'🛒'},{name:'Dining/Tips',icon:'🍔'},{name:'Gas/Fuel',icon:'⛽'},
+                {name:'Car Payment',icon:'🚗'},{name:'Utilities',icon:'⚡'},{name:'Insurance',icon:'🛡️'},{name:'Streaming',icon:'📺'},
+                {name:'Shopping',icon:'🛍️'},{name:'Student Loan',icon:'🎓'},{name:'Medical',icon:'🏥'},{name:'Others',icon:'➕'}
             ],
             income: [
-                {name:'Paycheck',icon:'🏦'},{name:'Side Hustle',icon:'🎸'},{name:'Bonus',icon:'✨'},{name:'Refund',icon:'🔙'},{name:'Investment',icon:'📈'}
+                {name:'Paycheck (W-2)',icon:'🏦'}, {name:'Gig/1099',icon:'🎸'}, {name:'Cash Tips',icon:'💵'}, {name:'Investment',icon:'📈'}, {name:'Tax Refund',icon:'💰'}
             ]
         },
-        newRecord: { type:'expense', category:'Dining Out', catIcon:'🍔', amount: '', note: '' }
+        newRecord: { type:'expense', category:'Dining/Tips', catIcon:'🍔', amount: '', note: '' }
     },
     computed: {
         totalExp() { return this.records.filter(r=>r.type==='expense').reduce((s,r)=>s+Number(r.amount),0) },
@@ -188,44 +193,36 @@ new Vue({
         save() {
             if(!this.newRecord.amount || this.newRecord.amount <= 0) return;
             this.records.unshift({...this.newRecord, date: new Date().getTime()});
-            localStorage.setItem('us_budget_v1', JSON.stringify(this.records));
+            localStorage.setItem('us_pro_budget', JSON.stringify(this.records));
             this.showModal = false;
-            this.newRecord.amount = '';
-            this.newRecord.note = '';
+            this.newRecord.amount = ''; this.newRecord.note = '';
         },
-        formatDate(ts) { 
-            return new Date(ts).toLocaleDateString('en-US', {month:'short', day:'numeric'}); 
+        formatDate(ts) { return new Date(ts).toLocaleDateString('en-US', {month:'short', day:'numeric'}); },
+        calculateTax() {
+            const inc = this.taxCalc.income || 0;
+            // Simplified 2025 Standard Deduction
+            const deduction = this.taxCalc.status === 'single' ? 15000 : 30000;
+            const taxable = Math.max(0, inc - deduction);
+            let tax = 0;
+            
+            // Basic Progressive Tax Brackets (Rough Estimate)
+            if(taxable > 0) {
+                if(taxable <= 11600) tax = taxable * 0.10;
+                else if(taxable <= 47150) tax = 1160 + (taxable-11600)*0.12;
+                else if(taxable <= 100525) tax = 5426 + (taxable-47150)*0.22;
+                else tax = 17168 + (taxable-100525)*0.24;
+            }
+            return { tax: Math.round(tax), rate: inc > 0 ? ((tax/inc)*100).toFixed(1) : 0 };
         },
         exportCSV() {
             let csv = "Date,Type,Category,Amount,Note\n";
-            this.records.forEach(r => {
-                csv += `${new Date(r.date).toLocaleDateString()},${r.type},${r.category},${r.amount},${r.note}\n`;
-            });
+            this.records.forEach(r => csv += `${this.formatDate(r.date)},${r.type},${r.category},${r.amount},${r.note}\n`);
             const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.setAttribute('href', url);
-            a.setAttribute('download', 'US_Budget_Export.csv');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'US_Tax_Budget_Data.csv';
             a.click();
-        },
-        renderCharts() {
-            const expData = this.records.filter(r => r.type === 'expense');
-            const catMap = {};
-            expData.forEach(r => catMap[r.category] = (catMap[r.category] || 0) + r.amount);
-            new Chart(document.getElementById('pieChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(catMap),
-                    datasets: [{ 
-                        data: Object.values(catMap),
-                        backgroundColor: ['#635BFF', '#00D4FF', '#3ECF8E', '#FBBF24', '#EF4444', '#8B5CF6']
-                    }]
-                }
-            });
         }
-    },
-    watch: {
-        view(val) { if(val === 'chart') this.$nextTick(() => this.renderCharts()); }
     }
 });
 </script>
